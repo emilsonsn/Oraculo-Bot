@@ -1,0 +1,13 @@
+{
+    "user":"guiiborges@hotmail.com",
+    "pass":"Gui2411",
+    "conn": {
+        "user": "root",
+        "pass": ""  ,
+        "host": "localhost",
+        "database": "oraculo_scraping"
+    },
+    "telegram":{
+        "token": "5532192507:AAEkAhCiEPeofGjK03ApJ61LEXrp4TIhOog"
+    }
+}
