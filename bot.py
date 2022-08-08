@@ -1,8 +1,4 @@
-from cgitb import reset
-from codecs import utf_8_encode
-from encodings import utf_8
 import gc
-from signal import signal
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -208,7 +204,7 @@ class Bot:
                         for iM, min in enumerate(minutos):
                             if min > 59: minutos[iM] = min-60
                         for iM, min in enumerate(minutos):
-                            if min < 0: minutos[iM] = 24-min
+                            if min < 0: minutos[iM] = 60-min
                         Conn.notificacao(Conn, [LigasNome[i], "5_mais", f"{date.today()} {int(hora)}:{int(minutos[0])}:00", minutos[1],minutos[2],minutos[3],minutos[4], 0])
 
     def calcularSinal1x1(self):
