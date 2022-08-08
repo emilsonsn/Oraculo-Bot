@@ -37,6 +37,8 @@ class Validador:
                         if(i == sinal[c+4]) : 
                             break
                     protecao.append(sinal[c+4])
+            if len(protecao) > 0:
+                return ['protecao', 0, protecao]
             return ['lose', 0, protecao]
         except Exception as err:
             return []

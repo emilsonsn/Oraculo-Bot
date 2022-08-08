@@ -52,6 +52,8 @@ class Telebot:
             mensagem+=" ====== ❌ LOSS ❌ ======"
         elif resultado == "abortada":
             mensagem+=" ====== ⚠️ ABORTADA ⚠️ ======"
+        elif resultado == "protecao":
+            mensagem+=" ======  PROTEÇÃO  ======"
         mensagem = self.montarPlacar(self, resultado, mensagem)
         for prot in protecao:
             mensagem = mensagem.replace(f"⏳{prot}", f"{prot}☑️")
@@ -63,26 +65,24 @@ class Telebot:
         Conn.resultadoNotificacao(Conn, id_noti, resultado)
     
     def montarPlacar(self, resultado,mensagem):
-        with open("result.json") as resultFile:
+        with open("result.json", "r") as resultFile:
             result = json.load(resultFile) 
-            resultFile.close()
-        result["resultado"]["envios"] = int(result["resultado"]["envios"])+1
-        win = int(result["resultado"]["win"])
-        abortadas  = int(result["resultado"]["abortadas"])
-        lose  = int(result["resultado"]["lose"])
-        envios  = int(result["resultado"]["envios"])+1
-
+            result["resultado"]["envios"] = int(result["resultado"]["envios"])+1
+            win = int(result["resultado"]["win"])
+            abortadas  = int(result["resultado"]["abortadas"])
+            lose  = int(result["resultado"]["lose"])
+            envios  = int(result["resultado"]["envios"])+1
         if resultado == "win":
             win = int(result["resultado"]["win"])+1
             result["resultado"]["win"] = int(result["resultado"]["win"])+1        
         elif resultado == "lose":
             lose  = int(result["resultado"]["lose"])+1
             result["resultado"]["lose"] = int(result["resultado"]["lose"])+1
-        else:
+        elif resultado == "abortadas":
             abortadas =  int(result["resultado"]["abortadas"])+1
             result["resultado"]["abortadas"] = int(result["resultado"]["abortadas"])+1
 
-        with open("result.json", 'w', encoding='UTF-8') as resultFile:
+        with open("result.json", "w") as resultFile:
             result = json.dumps(result, indent = 2) 
             resultFile.write(str(result))
             resultFile.close()
@@ -90,6 +90,5 @@ class Telebot:
         placar =f"""\nEnvios: {envios}\n✅Gain: {win}\n⛔️lose: {lose}\nAbortadas: {abortadas}"""
         placar +=f"\nAssertividade: {round((int(win)*100)/(int(lose)+int(win)), 2)}%"
         return (mensagem+placar)
-        
-# lliga, HOUR(horaNotificar), regra, hora_01, hora_02, hora_03, hora_04
+
 

@@ -4,7 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from src.conn import Conn
 from selenium.webdriver.common.by import By
-from time import sleep
+from time import sleep, time
 from datetime import date
 from datetime import datetime
 from src.Telebot import Telebot
@@ -97,14 +97,16 @@ class Bot:
                         if int(minuto) > 59:
                             minuto= (minuto-59)
                         if minuto < 0:
-                            minuto = 24 - minuto 
+                            minuto = 60 + minuto 
                         minutos = [int(minuto)-2, int(minuto), int(minuto)+3, int(minuto)+6, int(minuto)+9]
                         for iM, min in enumerate(minutos):
                             if min > 59: minutos[iM] = min-60
                         for iM, min in enumerate(minutos):
-                            if min < 0: minutos[iM] = 24-min
+                            if min < 0: minutos[iM] = 60+min
                         if hora == '23':
                             hora = "-1"   
+                        #if int(hora)+1 == int(timeHora[0].text):
+                        #    hora = int(hora)-1
                         Conn.notificacao(Conn, [LigasNome[i], "2x2", f"{date.today()} {int(hora)+1}:{int(minutos[0])}:00", minutos[1],minutos[2],minutos[3],minutos[4], 0])
 
     def calcularSinal2x0(self):
@@ -129,8 +131,9 @@ class Bot:
                             for iM, min in enumerate(minutos):
                                 if min > 59: minutos[iM] = min-60
                             for iM, min in enumerate(minutos):
-                                if min < 0: minutos[iM] = 24-min
-                                Conn.notificacao(Conn, [LigasNome[i], "2x0", f"{date.today()} {int(hora)}:{int(minutos[0])}:00", minutos[1],minutos[2],minutos[3],minutos[4], 0])
+                                if min < 0: minutos[iM] = 60-min
+
+                            Conn.notificacao(Conn, [LigasNome[i], "2x0", f"{date.today()} {int(hora)}:{int(minutos[0])}:00", minutos[1],minutos[2],minutos[3],minutos[4], 0])
         
     def calcularSinal1x1_1x0(self):
         timeHora = self.time['horas']
@@ -154,7 +157,7 @@ class Bot:
                             for iM, min in enumerate(minutos):
                                 if min > 59: minutos[iM] = min-60
                             for iM, min in enumerate(minutos):
-                                if min < 0: minutos[iM] = 24-min
+                                if min < 0: minutos[iM] = 60-min
                             Conn.notificacao(Conn, [LigasNome[i], "1x1_1x0", f"{date.today()} {int(hora)}:{int(minutos[0])}:00", minutos[1],minutos[2],minutos[3],minutos[4], 0])
 
 
@@ -180,7 +183,7 @@ class Bot:
                             for iM, min in enumerate(minutos):
                                 if min > 59: minutos[iM] = min-60
                             for iM, min in enumerate(minutos):
-                                if min < 0: minutos[iM] = 24-min
+                                if min < 0: minutos[iM] = 60-min
                             Conn.notificacao(Conn, [LigasNome[i], "2x0_1x0", f"{date.today()} {int(hora)}:{int(minutos[0])}:00", minutos[1],minutos[2],minutos[3],minutos[4], 0])
 
     def calcularSinal5_mais(self):
@@ -229,7 +232,7 @@ class Bot:
                             for iM, min in enumerate(minutos):
                                 if min > 59: minutos[iM] = min-60
                             for iM, min in enumerate(minutos):
-                                if min < 0: minutos[iM] = 24-min
+                                if min < 0: minutos[iM] = 60-min
                             Conn.notificacao(Conn, [LigasNome[i], "1x1", f"{date.today()} {hora}:{int(minutos[0])}:00", minutos[1],minutos[2],minutos[3],minutos[4], 0])
     
     def verificarSinal(self):
@@ -267,7 +270,7 @@ class Bot:
         return 0
 
     def zerarPlacar(self):
-        with open("result.json", 'w', encoding='UTF-8') as resultFile:
+        with open("result.json", 'r+', encoding='UTF-8') as resultFile:
             result = json.load(resultFile) 
             result["resultado"]["envios"] = 0
             result["resultado"]["win"] = 0
