@@ -1,94 +1,82 @@
+from email import message
+from pickletools import read_int4
 import telebot
 from time import sleep
-from src.conn import Conn
+from src.Conn import Conn
+from datetime import datetime
 import json
 
 class Telebot:
-    @staticmethod
-    def send_signal(self, dados, config):
-        if dados[3] == "2x2":
-            categoria = "OVER 3.5\n| ❗️SE BATER UMA ANTES ABORTAR |\n| PROTEGER EM AMBAS MARCAM |"
-        else:
-            categoria  = "Ambas Marcam"
-        with open("notificacao.txt", "r" , encoding='UTF-8') as notiFile:
-            noti = notiFile.read()
-            notiFile.close()
-        noti = noti.replace(r'{liga}', str(dados[1]))
-        noti = noti.replace(r'{hora}', str(dados[2]))
-        if int(dados[4]) <= 9 :
-            noti = f"{noti.replace(r'{t1}', f'0{str(dados[4])}')}" 
-        else:
-            noti = noti.replace(r'{t1}', str(dados[4]))
-        if int(dados[5]) <= 9 :
-            noti = f"{noti.replace(r'{t2}', f'0{str(dados[5])}')}" 
-        else:
-            noti = noti.replace(r'{t2}', str(dados[5]))
-        if int(dados[6]) <= 9 :
-            noti = f"{noti.replace(r'{t3}', f'0{str(dados[6])}')}" 
-        else:
-            noti = noti.replace(r'{t3}', str(dados[6]))
-        if int(dados[7]) <= 9 :
-            noti = f"{noti.replace(r'{t4}', f'0{str(dados[7])}')}" 
-        else:
-             noti = noti.replace(r'{t4}', str(dados[7]))
-
-        noti = noti.replace(r'{categoria}', categoria)
-        bot = telebot.TeleBot(config['telegram']['token'], parse_mode=None)
-        list_id_group = Conn.getListId(Conn)
-        messagens_enviadas = []
-        for id in list_id_group:
-            messageInfo = (bot.send_message(id[0], noti))
-            messagens_enviadas.append(messageInfo.message_id)
-            sleep(0.5)
-        return [messagens_enviadas, noti]
-
-    def update_signal(self, messages_sent, id_noti, mensagem, resultado, entrada, protecao, config):
-        bot = telebot.TeleBot(config['telegram']['token'], parse_mode=None)
-        if resultado == "win":
-            if entrada <= 9 : entrada = f"0{entrada}"
-            mensagem = mensagem.replace(f"⏳{entrada}", f"{entrada}✅")
-            mensagem+=" ====== ✅ GAIN ✅ ======"
-        elif resultado == "lose":
-            mensagem+=" ====== ❌ LOSS ❌ ======"
-        elif resultado == "abortada":
-            mensagem+=" ====== ⚠️ ABORTADA ⚠️ ======"
-        elif resultado == "protecao":
-            mensagem+=" ======  PROTEÇÃO  ======"
-        mensagem = self.montarPlacar(self, resultado, mensagem)
-        for prot in protecao:
-            mensagem = mensagem.replace(f"⏳{prot}", f"{prot}☑️")
-
-        list_id_group = Conn.getListId(Conn)
-        for i,grupo in enumerate(list_id_group):
-            id_message = messages_sent[i]
-            bot.edit_message_text(chat_id=grupo,message_id=id_message, text=mensagem)
-        Conn.resultadoNotificacao(Conn, id_noti, resultado)
     
-    def montarPlacar(self, resultado,mensagem):
-        with open("result.json", "r") as resultFile:
-            result = json.load(resultFile) 
-            result["resultado"]["envios"] = int(result["resultado"]["envios"])+1
-            win = int(result["resultado"]["win"])
-            abortadas  = int(result["resultado"]["abortadas"])
-            lose  = int(result["resultado"]["lose"])
-            envios  = int(result["resultado"]["envios"])+1
-        if resultado == "win":
-            win = int(result["resultado"]["win"])+1
-            result["resultado"]["win"] = int(result["resultado"]["win"])+1        
-        elif resultado == "lose":
-            lose  = int(result["resultado"]["lose"])+1
-            result["resultado"]["lose"] = int(result["resultado"]["lose"])+1
-        elif resultado == "abortadas":
-            abortadas =  int(result["resultado"]["abortadas"])+1
-            result["resultado"]["abortadas"] = int(result["resultado"]["abortadas"])+1
+    @staticmethod
+    def send_signal(self, liga, categoria, estrategia, config, hora, minutos, mediaGeral, estrategia_dif):
+        if str(liga).strip() == "Euro Cup" : liga = "EURO"
+        if str(liga).strip() == "Premier League" : liga = "PREMIER"
+        if str(liga).strip() == "Copa do Mundo" : liga = "COPA"
+        if str(liga).strip() == "Superleague" : liga = "SUPER"
+        with open("mensagem.txt", encoding='utf8') as mensagemFile:
+            mensagem = mensagemFile.read()
+            mensagemFile.close()   
+        list_id_group = Conn.get_groups(Conn)
+        bot = telebot.TeleBot(config['telegram']['token'])
+        messagens_enviadas = []
+        _minutos = []
+        if hora < 10 : hora = f"0{hora}" 
+        for minuto in minutos:
+            if minuto < 10 : minuto = f"0{minuto}"
+            _minutos.append(minuto)
+        minutos = _minutos
+        for i, grupo in enumerate(list_id_group):
+            try:                
+                mensagem = str(mensagem).replace('{categoria}', categoria)
+                mensagem = str(mensagem).replace('{liga}', liga)
+                mensagem = str(mensagem).replace('{estrategia}', estrategia)
+                mensagem = str(mensagem).replace('{hora}', str(hora))
+                mensagem = str(mensagem).replace('{t1}', str(minutos[0]))
+                mensagem = str(mensagem).replace('{t2}', str(minutos[1]))
+                mensagem = str(mensagem).replace('{t3}', str(minutos[2]))
+                mensagem = str(mensagem).replace('{t4}', str(minutos[3]))
+                messageInfo = (bot.send_message(grupo[0], mensagem))
+                messagens_enviadas.append([grupo[0], messageInfo.message_id])
+                if i == 0:
+                    mediaGeral = round(mediaGeral,2)
+                    if estrategia_dif == '5H' : estrategia = estrategia_dif
+                    messageInfo = (bot.send_message(grupo[0], "⚽ Padrão: ({estrategia}) ⚽\nPorcentagem: {mediaGeral}".replace('{mediaGeral}', str(mediaGeral)).replace('{estrategia}', estrategia)))
+                   
+            except Exception as err:
+                print(str(err))
+                continue
+            sleep(0.5)
+        return [messagens_enviadas, mensagem]
 
-        with open("result.json", "w") as resultFile:
-            result = json.dumps(result, indent = 2) 
-            resultFile.write(str(result))
-            resultFile.close()
 
-        placar =f"""\nEnvios: {envios}\n✅Gain: {win}\n⛔️lose: {lose}\nAbortadas: {abortadas}"""
-        placar +=f"\nAssertividade: {round((int(win)*100)/(int(lose)+int(win)), 2)}%"
-        return (mensagem+placar)
+    def update_signal(self, resultado, mensagem, minuto, list_message, config, result_boolean, tentativa, ultima, main):
+        bot = telebot.TeleBot(config['telegram']['token'])
+        if minuto < 10 : minuto = f"0{minuto}"
+        if result_boolean:
+            tentativa+=1 
+            if tentativa == 1 : tentativa = "1⃣"
+            if tentativa == 2 : tentativa = "2⃣"
+            if tentativa == 3 : tentativa = "3⃣"
+            if tentativa == 4 : tentativa = "4⃣"
+            mensagem += f"\n{resultado} {tentativa} ({ultima})"
+        else:
+            mensagem += f"\n{resultado}"
+        for grupo in list_message:
+            try:
+                bot.edit_message_text(chat_id=grupo[0],message_id=grupo[1], text=mensagem)
+            except Exception as err:
+                print(err)
+                continue
 
-
+    @staticmethod
+    def send_score(self, main):
+        list_id_group = Conn.get_groups(Conn)
+        bot = telebot.TeleBot(main.config['telegram']['token'])
+        for i, grupo in enumerate(list_id_group):
+            try:                
+                if i == 0:
+                    messageInfo = (bot.send_message(grupo[0], main.get_score(main)))
+            except Exception as err:
+                print(str(err))
+                continue

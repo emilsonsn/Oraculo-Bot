@@ -1,8 +1,1 @@
-{
-  "resultado": {
-    "win": 0,
-    "lose": 0,
-    "abortadas": 0,
-    "envios": 0
-  }
-}
+{"resultado": {"gain": 74, "loss": 12, "envios": 86}}

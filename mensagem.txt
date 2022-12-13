@@ -1,0 +1,11 @@
+🏆 {liga}
+
+🚦 {categoria}
+
+🕗 {hora} 
+
+⚽ {t1} - {t2} - {t3} - {t4}
+
+Atenção: Sequências grandes de
+ambas sim e ambas não tornam a
+entrada arriscada.

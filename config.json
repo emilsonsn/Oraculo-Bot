@@ -1,13 +1,15 @@
 {
-    "user":"guiiborges@hotmail.com",
-    "pass":"Gui2411",
-    "conn": {
-        "user": "root",
-        "pass": ""  ,
+    "conn":{
         "host": "localhost",
-        "database": "oraculo_scraping"
+        "user": "root",
+        "pass": "",
+        "database": "bot_futebol_virtual"
+    },
+    "user_api":{
+        "user": "teste",
+        "password": "1"
     },
     "telegram":{
-        "token": "5539076799:AAGYZT_Le4f49IzpzmHfRvqzTZp1yhTau1E"
+        "token": "5516977701:AAEtVJj-iDKCePAjObhsXMbqqvijtkhFhxc"
     }
 }

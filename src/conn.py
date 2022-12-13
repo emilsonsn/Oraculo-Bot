@@ -1,78 +1,110 @@
 import mysql.connector
 import json
-from datetime import datetime, timedelta
-
+from datetime import date
 class Conn:
+
     def start(self):
         with open("config.json") as configFile:
             config = (json.load(configFile))['conn']
             configFile.close()
         self.conn = mysql.connector.connect(user=config['user'], password=config['pass'], host=config['host'], database=config['database'])
-
-    @staticmethod
-    def notificacao(self, arrayData):
+    
+    def get_groups(self):
+         #liga, res_casa, res_fora, hora, minuto, nome casa, nome fora
         self.start(self)
-        if self.existeNoficacao(self, arrayData):
-            return 0
-        else:
-            dataSinal = datetime.strptime(arrayData[2], "%Y-%m-%d %H:%M:%S")
-            hoje = int(datetime.today().hour)+4
-            if hoje > 23:
-                hoje = 24-hoje
-            minuto = datetime.today().minute
-            if dataSinal.hour >= hoje or ( dataSinal.hour >= hoje and dataSinal.minute > minuto):
-                self.salvarNoticicacao(self, arrayData)
+        sql_select_Query ="SELECT telegram_id FROM `tb_grupos` WHERE ativado = 1"
+        cursor = self.conn.cursor()
+        cursor.execute(sql_select_Query)
+        records = cursor.fetchall()
+        self.conn.close()
+        return records
+    
+    def get_estrategias(self, cod):
+         #liga, res_casa, res_fora, hora, minuto, nome casa, nome fora
+        self.start(self)
+        sql_select_Query ="SELECT id FROM `tb_estrategias` WHERE cod = '%s' and ativada = 1". replace('%s', cod)
+        cursor = self.conn.cursor()
+        cursor.execute(sql_select_Query)
+        records = cursor.fetchall()
+        self.conn.close()
+        return len(records) > 0
+    
+    def insertResult(self, resultado, estrategia, tiro, categoria):
+        self.start(self)
+        sql = "INSERT INTO tb_resultados (resultado, estrategia, tiro, categoria) VALUES (%s, %s, %s, %s)"
+        val = (resultado, estrategia, tiro, categoria)
+        cursor = self.conn.cursor()
+        cursor.execute(sql, val)
+        self.conn.commit()
+        self.conn.close()
         
-    def salvarNoticicacao(self, arrayData):
-        mycursor = self.conn.cursor()
-        sql = """INSERT INTO tb_eventos
-        (liga, regra, horaNotificar, min_1, min_2, min_3, min_4, enviado)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
-        val = (arrayData[0], arrayData[1],arrayData[2], arrayData[3], arrayData[4], arrayData[5], arrayData[6], arrayData[7])
-        mycursor.execute(sql, val)
-        self.conn.commit()
+    def get_resultado_geral(self):
+         #liga, res_casa, res_fora, hora, minuto, nome casa, nome fora
+        self.start(self)
+        sql_select_Query = """Select ROUND((SELECT count(*) FROM tb_resultados where resultado='gain' and cast(data as date) = cast(now() as date)) /
+        ((SELECT count(*) FROM tb_resultados where resultado='gain' and cast(data as date) = cast(now() as date)) +
+        (SELECT count(*) FROM tb_resultados where resultado='loss' and cast(data as date) = cast(now() as date))) * 100)"""
+        cursor = self.conn.cursor()
+        cursor.execute(sql_select_Query)
+        records = cursor.fetchall()
+        self.conn.close()
+        return str((records[0][0])) + '%'
 
-    def updateNotificacao(self, data):
+    def get_resultado_tiro(self, tiro):
+         #liga, res_casa, res_fora, hora, minuto, nome casa, nome fora
         self.start(self)
-        sql_select_Query = "UPDATE tb_eventos SET enviado = 1 WHERE id = {id}".replace("{id}", str(data[0]))
+        sql_select_Query = """Select ROUND((SELECT count(*) FROM tb_resultados where resultado='gain' and tiro={tiro} and cast(data as date) = cast(now() as date))
+        /((SELECT count(*) FROM tb_resultados where resultado='gain' and tiro={tiro} and cast(data as date) = cast(now() as date))
+        +(SELECT count(*) FROM tb_resultados where resultado='loss' and tiro={tiro} and cast(data as date) = cast(now() as date)))*100, 2)""".replace('{tiro}', str(tiro))
         cursor = self.conn.cursor()
         cursor.execute(sql_select_Query)
-        self.conn.commit()
+        records = cursor.fetchall()
+        self.conn.close()
+        return str((records[0][0])) + '%'
 
-    def existeNoficacao(self,arrayData):
+    def get_ambas(self):
+         #liga, res_casa, res_fora, hora, minuto, nome casa, nome fora
         self.start(self)
-        sql_select_Query ="select id from tb_eventos where liga=%s and regra=%s and horaNotificar=%s"
-        val = (arrayData[0], arrayData[1], arrayData[2])
-        cursor = self.conn.cursor()
-        cursor.execute(sql_select_Query, val)
-        records = cursor.fetchall()
-        return (len(records)>0)
-    
-    def getSinal(self, data):
-        hora = data.hour+4
-        if hora >=24 :
-            hora = hora-24
-        data = f"{data.year}-{data.month}-{data.day} {hora}:{data.minute}:00"
-        self.start(self)
-        sql_select_Query = "select id, liga, HOUR(horaNotificar), regra, min_1, min_2, min_3, min_4 from tb_eventos where enviado = 0 and horaNotificar = '{date}' ORDER BY horaNotificar asc LIMIT 1".replace("{date}", data)
-        val = (data)
-        cursor = self.conn.cursor()
-        cursor.execute(sql_select_Query, val)
-        records = cursor.fetchall()
-        return records
-    
-    def resultadoNotificacao(self, id, resultado):
-        #Conn, id_noti, resultado
-        self.start(self)
-        sql_select_Query = "UPDATE tb_eventos SET resultado = '{resultado}' WHERE id = {id}".replace("{resultado}", resultado).replace("{id}", str(id))
-        cursor = self.conn.cursor()
-        cursor.execute(sql_select_Query)
-        self.conn.commit()
-    
-    def getListId(self):
-        self.start(self)
-        sql_select_Query = "select id_grupo from tb_grupos where ativado = 1"
+        sql_select_Query = """Select ROUND((SELECT count(*) FROM tb_resultados where resultado='gain' and categoria='AMBAS MARCAM' and cast(data as date) = cast(now() as date)) /
+        ((SELECT count(*) FROM tb_resultados where resultado='gain' and categoria='AMBAS MARCAM' and cast(data as date) = cast(now() as date)) +
+        (SELECT count(*) FROM tb_resultados where resultado='loss' and categoria='AMBAS MARCAM' and cast(data as date) = cast(now() as date))) * 100)  as 'ambas'"""
         cursor = self.conn.cursor()
         cursor.execute(sql_select_Query)
         records = cursor.fetchall()
-        return records
+        self.conn.close()
+        return str((records[0][0])) + '%'
+
+    def get_2_5(self):
+         #liga, res_casa, res_fora, hora, minuto, nome casa, nome fora
+        self.start(self)
+        sql_select_Query = """Select ROUND((SELECT count(*) FROM tb_resultados where resultado='gain' and categoria='2.5' and cast(data as date) = cast(now() as date)) /
+        ((SELECT count(*) FROM tb_resultados where resultado='gain' and categoria='2.5' and cast(data as date) = cast(now() as date)) +
+        (SELECT count(*) FROM tb_resultados where resultado='loss' and categoria='2.5' and cast(data as date) = cast(now() as date))) * 100) as '2_5'"""
+        cursor = self.conn.cursor()
+        cursor.execute(sql_select_Query)
+        records = cursor.fetchall()
+        self.conn.close()
+        return str((records[0][0])) + '%'
+
+    def get_3_5_ambas(self):
+         #liga, res_casa, res_fora, hora, minuto, nome casa, nome fora
+        self.start(self)
+        sql_select_Query = """Select ROUND((SELECT count(*) FROM tb_resultados where resultado='gain' and categoria='AMBAS MARCAM 3.5' and cast(data as date) = cast(now() as date)) /
+        ((SELECT count(*) FROM tb_resultados where resultado='gain' and categoria='AMBAS MARCAM 3.5' and cast(data as date) = cast(now() as date)) +
+        (SELECT count(*) FROM tb_resultados where resultado='loss' and categoria='AMBAS MARCAM 3.5' and cast(data as date) = cast(now() as date))) * 100)  as '3_5_ambas'"""
+        cursor = self.conn.cursor()
+        cursor.execute(sql_select_Query)
+        records = cursor.fetchall()
+        self.conn.close()
+        return str((records[0][0])) + '%'
+
+    def sequenciaMes(self):
+        self.start(self)
+        sql_select_Query = "SELECT sequencia_mes FROM tb_resultados_mes where month(now()) = month(data);"
+        cursor = self.conn.cursor()
+        cursor.execute(sql_select_Query)
+        records = cursor.fetchall()
+        self.conn.close()
+        return records[0][0]
+
+
